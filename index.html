@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KitobchaPrint v2 - Qulay Chop Etish</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f8fafc; color: #0f172a; min-height: 100vh; }
+    header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { font-size: 26px; background: #eff6ff; padding: 6px 10px; border-radius: 8px; }
+    .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-accent { background: #059669; color: #fff; }
+    .btn-secondary { background: #f1f5f9; border-color: #cbd5e1; }
+    .btn-outline { background: transparent; border-color: #cbd5e1; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+    .btn-full { width: 100%; }
+
+    .upload-box { display: flex; align-items: center; justify-content: center; height: 75vh; }
+    .drop-zone { background: #fff; border: 2px dashed #93c5fd; border-radius: 12px; padding: 60px 40px; text-align: center; max-width: 500px; width: 100%; cursor: pointer; }
+    .drop-zone:hover { border-color: #2563eb; background: #eff6ff; }
+    .drop-icon { font-size: 50px; margin-bottom: 12px; }
+
+    .workspace { display: grid; grid-template-columns: 360px 1fr; height: calc(100vh - var(--hh, 65px)); }
+    .sidebar { background: #fff; border-right: 1px solid #e2e8f0; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+    .panel-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
+    .panel-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; color: #334155; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .form-control { width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
+    .chk { font-size: 12px; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .nup-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .nup-btn { padding: 8px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .nup-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+    .step-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; background: #059669; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
+    .flip-hint { background: #fefce8; border: 1px dashed #fde047; padding: 8px; border-radius: 6px; font-size: 11px; color: #854d0e; margin-bottom: 8px; }
+    .warn-hint { background: #fff7ed; border: 1px solid #fed7aa; padding: 8px; border-radius: 6px; font-size: 11px; color: #9a3412; }
+
+    .main-area { display: flex; flex-direction: column; background: #f1f5f9; overflow: hidden; }
+    .toolbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .tab-btn { background: none; border: none; padding: 6px 12px; font-weight: 600; cursor: pointer; border-radius: 6px; }
+    .tab-btn.active { background: #eff6ff; color: #2563eb; }
+    .pages-scroll { flex: 1; padding: 16px; overflow-y: auto; }
+    .pages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+    .page-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .page-card.excluded { opacity: 0.4; }
+    .page-preview { height: 210px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .page-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .page-preview iframe { width: 100%; height: 100%; border: none; }
+
+    .sheet-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+    .sheet-visual { width: 100%; max-width: 500px; height: 180px; border: 2px solid #94a3b8; display: grid; grid-template-columns: 1fr 1fr; margin: 8px auto; position: relative; }
+    .sheet-visual::after { content: ""; position: absolute; top:0; bottom:0; left:50%; border-left: 2px dashed #94a3b8; }
+    .slot { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; margin: 4px; border-radius: 4px; }
+    .slot-num { font-size: 26px; font-weight: bold; color: #1e293b; }
+    .sv { width: 100%; margin: 8px auto; border: 2px solid #94a3b8; background: #fff; display: grid; position: relative; box-sizing: border-box; }
+    .sv .cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #eff6ff; border: 1px solid #93c5fd; border-radius: 2px; min-width: 0; min-height: 0; overflow: hidden; }
+    .sv .cell.empty { background: #f1f5f9; border-style: dashed; border-color: #cbd5e1; color: #94a3b8; }
+    .sv .cell b { font-size: 22px; color: #1e293b; line-height: 1.1; }
+    .sv .cell small { font-size: 10px; color: #64748b; }
+    .sv .fold { position: absolute; top: 0; bottom: 0; left: 50%; border-left: 2px dashed #f97316; pointer-events: none; }
+    .plan-summary { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; position: sticky; top: 0; z-index: 5; }
+    /* ===== Xavfsizlik va tezlik haqida eslatma ===== */
+    .privacy-note { flex: 1; max-width: 680px; margin: 0 20px; font-size: 12px; line-height: 1.45; text-align: center; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 8px; padding: 6px 12px; }
+    .privacy-note .speed { display: block; margin-top: 3px; color: #92400e; }
+    @media (max-width: 1000px) { header { flex-wrap: wrap; gap: 8px; } .privacy-note { order: 3; flex-basis: 100%; max-width: none; margin: 0; } }
+    /* ===== Qo'llanma (rasmli yo'riqnoma) ===== */
+    .gm { position: fixed; inset: 0; background: rgba(15,23,42,0.65); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 12px; }
+    .gm.open { display: flex; }
+    .gbox { background: #fff; border-radius: 14px; max-width: 660px; width: 100%; max-height: 94vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
+    .ghead { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px 4px; }
+    .ghead h3 { font-size: 18px; color: #0f172a; }
+    .gclose { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+    .gstage { position: relative; height: 220px; background: linear-gradient(#e0f2fe, #f1f5f9); border-radius: 12px; margin: 10px 18px; overflow: hidden; perspective: 700px; }
+    .gtext { padding: 4px 20px 10px; font-size: 14px; line-height: 1.6; color: #1e293b; }
+    .gtext ul { margin: 8px 0 8px 20px; }
+    .gtext li { margin-bottom: 5px; }
+    .gtext h4 { margin: 12px 0 4px; font-size: 14px; }
+    .gnav { display: flex; align-items: center; justify-content: space-between; padding: 8px 18px 16px; gap: 8px; }
+    .gdots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .gdot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; cursor: pointer; }
+    .gdot.on { background: #2563eb; transform: scale(1.3); }
+    .gstage .cap { position: absolute; bottom: 10px; font-size: 12px; color: #334155; background: rgba(255,255,255,0.85); padding: 2px 10px; border-radius: 10px; z-index: 5; }
+    .gstage .cap.l { left: 12px; } .gstage .cap.r { right: 12px; } .gstage .cap.c { left: 50%; transform: translateX(-50%); }
+    .scene { position: absolute; inset: 0; }
+
+    /* printer animatsiyasi */
+    .pbody { position: absolute; left: 50%; top: 50%; width: 140px; height: 96px; margin: -48px 0 0 -70px; background: #475569; border-radius: 12px; z-index: 3; display: flex; align-items: center; justify-content: center; font-size: 44px; box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+    .paper { position: absolute; left: 50%; top: 50%; width: 70px; height: 50px; margin: -25px 0 0 -35px; background: #fff; border: 2px solid #94a3b8; border-radius: 3px; z-index: 2; display: flex; align-items: center; justify-content: center; animation: gFeed 4.5s ease-in-out infinite; }
+    .paper .mk { font-weight: 800; font-size: 22px; opacity: 0; animation: gMark 4.5s ease-in-out infinite; }
+    .mk.blue { color: #2563eb; } .mk.orange { color: #ea580c; }
+    @keyframes gFeed { 0%,4% { transform: translateX(-320px); } 96%,100% { transform: translateX(320px); } }
+    @keyframes gMark { 0%,48% { opacity: 0; } 58%,100% { opacity: 1; } }
+
+    /* pastga tushayotgan fayl */
+    .dz { position: absolute; left: 50%; top: 50%; width: 230px; height: 120px; margin: -60px 0 0 -115px; border: 3px dashed #60a5fa; background: #eff6ff; border-radius: 14px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; font-size: 13px; color: #2563eb; font-weight: 600; }
+    .fl { position: absolute; left: 50%; top: 30%; font-size: 50px; animation: gDrop 3s ease-in-out infinite; }
+    @keyframes gDrop { 0% { transform: translate(-50%,-130px); opacity: 0; } 25% { opacity: 1; } 60%,85% { transform: translate(-50%,0); opacity: 1; } 100% { transform: translate(-50%,0); opacity: 0; } }
+
+    /* qalam bilan o'q chizish */
+    .stackp { position: absolute; left: 50%; top: 50%; width: 150px; height: 105px; margin: -52px 0 0 -75px; background: #fff; border: 2px solid #94a3b8; border-radius: 4px; box-shadow: 4px 4px 0 #cbd5e1, 8px 8px 0 #e2e8f0; display: flex; align-items: center; justify-content: center; }
+    .arrowp { font-size: 58px; font-weight: 900; color: #dc2626; animation: gArrow 4s ease-in-out infinite; }
+    @keyframes gArrow { 0%,20% { opacity: 0; transform: translateY(14px) scale(0.6); } 45%,90% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+    .pencil { position: absolute; left: 50%; top: 50%; margin: -10px 0 0 10px; font-size: 34px; z-index: 4; opacity: 0; animation: gPencil 4s ease-in-out infinite; }
+    @keyframes gPencil { 0%,15% { opacity: 0; transform: translate(30px,30px); } 25% { opacity: 1; transform: translate(10px,20px); } 40% { opacity: 1; transform: translate(-10px,-15px); } 55% { opacity: 1; transform: translate(0,0); } 70%,100% { opacity: 0; } }
+
+    /* to'ntarish */
+    .flipbox { position: absolute; left: 50%; top: 50%; width: 150px; height: 104px; margin: -52px 0 0 -75px; transform-style: preserve-3d; animation: gFlip 5.5s ease-in-out infinite; }
+    .fc { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: #fff; border: 2px solid #94a3b8; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; color: #2563eb; box-shadow: 4px 4px 0 #cbd5e1, 8px 8px 0 #e2e8f0; }
+    .bc { background: #fffbeb; color: #94a3b8; font-size: 15px; font-weight: 600; transform: rotateY(180deg); }
+    @keyframes gFlip { 0%,10% { transform: rotateY(0); } 40%,60% { transform: rotateY(180deg); } 90%,100% { transform: rotateY(360deg); } }
+    .spin { position: absolute; left: 50%; top: 14px; margin-left: -18px; font-size: 32px; z-index: 5; animation: gPulse 2s ease-in-out infinite; }
+    @keyframes gPulse { 0%,100% { transform: scale(1); opacity: .6; } 50% { transform: scale(1.25); opacity: 1; } }
+
+    /* buklash va tikish */
+    .bk { position: absolute; left: 50%; top: 50%; width: 200px; height: 120px; margin: -60px 0 0 -100px; transform-style: preserve-3d; animation: gBkMove 6.5s ease-in-out infinite; }
+    .rh { position: absolute; left: 100px; top: 0; width: 100px; height: 120px; background: #fff; border: 2px solid #94a3b8; border-left: 2px dashed #f97316; border-radius: 0 4px 4px 0; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 800; color: #2563eb; }
+    .lh { position: absolute; left: 0; top: 0; width: 100px; height: 120px; transform-origin: right center; transform-style: preserve-3d; animation: gBkFold 6.5s ease-in-out infinite; }
+    .lh .fc { box-shadow: none; border-radius: 4px 0 0 4px; border-right: 2px dashed #f97316; }
+    .stp { position: absolute; left: 97px; width: 6px; height: 16px; background: #475569; border-radius: 2px; transform: translateZ(3px); opacity: 0; animation: gStp 6.5s ease-in-out infinite; }
+    @keyframes gBkFold { 0%,10% { transform: rotateY(0); } 50%,95% { transform: rotateY(-180deg); } 96%,100% { transform: rotateY(0); } }
+    @keyframes gBkMove { 0%,10% { transform: translateX(0); opacity: 1; } 50% { transform: translateX(-50px); } 92% { opacity: 1; transform: translateX(-50px); } 95% { opacity: 0; transform: translateX(-50px); } 96% { opacity: 0; transform: translateX(0); } 100% { opacity: 1; transform: translateX(0); } }
+    @keyframes gStp { 0%,55% { opacity: 0; } 62%,94% { opacity: 1; } 95%,100% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .gstage * { animation: none !important; } .paper .mk, .arrowp { opacity: 1 !important; } }
+    .loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; z-index: 1000; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="logo-area">
+      <div class="logo-icon">📖</div>
+      <div><h2>KitobchaPrint <small style="font-size:12px;color:#2563eb;">v2</small></h2><p style="font-size:11px;color:#64748b;">Kitobcha va N-Up chop etish paneli</p></div>
+    </div>
+    <div class="privacy-note">
+      🔒 <b>Saytda sizning fayllaringiz hech qanday holatda hech qanday serverlarga yuklanmaydi — xavfsizligingiz yuzasidan!</b>
+      <span class="speed">⏳ Shu sababli fayllar sizning qurilmangizda qayta ishlanadi: qurilmangiz yoki internet tezligi past bo'lsa, sayt birozgina sekin ishlashi mumkin.</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-accent" onclick="openGuide(0)">❓ Qo'llanma</button>
+      <button id="resetBtn" class="btn btn-outline" style="display:none;" onclick="location.reload()">Yangi fayl</button>
+    </div>
+  </header>
+
+  <div id="uploadView" class="upload-box">
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">📑</div>
+      <h3>PDF faylni shu yerga tashlang</h3>
+      <p style="color:#64748b;font-size:13px;margin:8px 0 16px;">yoki kompyuterdan tanlang</p>
+      <input type="file" id="fileInp" accept="application/pdf" style="display:none">
+      <button class="btn btn-primary">Fayl tanlash</button>
+    </div>
+  </div>
+
+  <div id="workspaceView" class="workspace" style="display:none;">
+    <aside class="sidebar">
+      <div class="panel-box">
+        <h4 class="panel-title">Chop etish rejimi</h4>
+        <label><input type="radio" name="mode" value="booklet" checked onchange="switchMode('booklet')"> <b>📖 Kitobcha (A4 -> A5)</b></label><br>
+        <label style="margin-top:6px;display:inline-block;"><input type="radio" name="mode" value="nup" onchange="switchMode('nup')"> <b>📑 N-Up (Ko'p sahifali)</b></label>
+      </div>
+
+      <div id="bookletSettings" class="panel-box">
+        <h4 class="panel-title">Kitobcha sozlamalari</h4>
+        <div class="form-group">
+          <label>Daftarchalar (Bloklar):</label>
+          <select id="sigSelect" class="form-control" onchange="refreshPreview()">
+            <option value="0">Bitta umumiy bukma (Ingichka kitobcha)</option>
+            <option value="8">8 sahifalik bloklar</option>
+            <option value="16" selected>16 sahifalik bloklar (Standart)</option>
+            <option value="24">24 sahifalik bloklar</option>
+            <option value="32">32 sahifalik bloklar</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tikish oraliq (Gutter mm):</label>
+          <input type="number" id="gutterInp" value="4" min="0" max="25" step="0.5" class="form-control" oninput="refreshPreview()">
+        </div>
+        <label class="chk"><input type="checkbox" id="foldChk" onchange="refreshPreview()"> Tikish (buklash) chizig'ini chizish</label>
+      </div>
+
+      <div id="nupSettings" class="panel-box" style="display:none;">
+        <h4 class="panel-title">N-Up parametrlari</h4>
+        <label style="font-size:12px;font-weight:600;margin-bottom:6px;display:block;">1 varaqdagi sahifalar soni:</label>
+        <div class="nup-grid">
+          <button class="nup-btn" onclick="setNup(1, this)">1</button>
+          <button class="nup-btn active" onclick="setNup(2, this)">2</button>
+          <button class="nup-btn" onclick="setNup(4, this)">4</button>
+          <button class="nup-btn" onclick="setNup(8, this)">8</button>
+        </div>
+      </div>
+
+      <div class="panel-box">
+        <h4 class="panel-title">Umumiy sozlamalar</h4>
+        <div class="form-group">
+          <label>Chekka (Margin mm):</label>
+          <input type="number" id="marginInp" value="5" min="0" max="25" step="0.5" class="form-control" oninput="refreshPreview()">
+          <small style="color:#64748b;font-size:11px;">Ko'p printerlar 4–5 mm dan chetga bosa olmaydi.</small>
+        </div>
+        <label class="chk"><input type="checkbox" id="borderChk" onchange="refreshPreview()"> Sahifa ramkalarini chizish</label>
+      </div>
+
+      <div class="panel-box" style="border:2px solid #86efac;background:#fff;">
+        <h4 class="panel-title" style="color:#15803d;">🖨️ Bir tomonlama printer (Manual Duplex)</h4>
+        <button class="btn btn-outline btn-full btn-sm" style="margin-bottom:10px;" onclick="openGuide(2)">▶ Qanday ishlaydi? (rasmli qo'llanma)</button>
+        <div class="step-box">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="step-num">1</div>
+            <div><b style="font-size:12px;">1-qadam: Oldi betlar</b><br><small style="color:#64748b;">Faqat oldi tomonlar</small></div>
+          </div>
+          <button class="btn btn-accent btn-sm" onclick="downloadPdf('fronts')">Yuklab olish</button>
+        </div>
+
+        <div class="flip-hint">🔄 <b>Ko'rsatma:</b> Chiqqan qog'ozlarni printer modeliga qarab to'ntarib qayta soling. Birinchi marta <b>8 betlik sinov fayli</b> bilan tekshirib ko'ring.</div>
+
+        <div class="step-box">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="step-num">2</div>
+            <div><b style="font-size:12px;">2-qadam: Orqa betlar</b><br><small style="color:#64748b;">To'ntarilgan qog'ozga</small></div>
+          </div>
+          <button class="btn btn-accent btn-sm" onclick="downloadPdf('backs')">Yuklab olish</button>
+        </div>
+        <label class="chk" style="margin-top:6px;">
+          <input type="checkbox" id="revBacks" checked> Orqa betlarni teskari tartibda chiqarish
+        </label>
+        <hr style="margin:12px 0;border:none;border-top:1px solid #e2e8f0;">
+        <button class="btn btn-outline btn-full btn-sm" onclick="downloadPdf('combined')">📑 Avtomatik Duplex uchun (Bitta PDF)</button>
+        <div class="warn-hint" style="margin-top:10px;">⚠️ Chop etish oynasida masshtabni <b>"Actual size / 100%"</b> qiling. <b>"Fit to page"</b> ni yoqmang.</div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <div class="toolbar">
+        <div><b id="fileLabel">hujjat.pdf</b> <span id="statLabel" style="font-size:12px;color:#64748b;margin-left:8px;"></span></div>
+        <div style="display:flex;gap:6px;">
+          <button class="tab-btn active" id="tabBtn1" onclick="showTab(1)">Sahifalar</button>
+          <button class="tab-btn" id="tabBtn2" onclick="showTab(2)">Varaqlar rejasi</button>
+        </div>
+      </div>
+
+      <div id="tab1" class="pages-scroll">
+        <div id="pagesGrid" class="pages-grid"></div>
+      </div>
+
+      <div id="tab2" class="pages-scroll" style="display:none;">
+        <div id="planGrid"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="guideModal" class="gm" onclick="if(event.target===this) closeGuide()">
+    <div class="gbox">
+      <div class="ghead"><h3 id="guideTitle"></h3><button class="gclose" onclick="closeGuide()">✕</button></div>
+      <div id="guideStage" class="gstage"></div>
+      <div id="guideText" class="gtext"></div>
+      <div class="gnav">
+        <button id="gPrev" class="btn btn-secondary" onclick="guideGo(-1)">← Orqaga</button>
+        <div id="guideDots" class="gdots"></div>
+        <button id="gNext" class="btn btn-primary" onclick="guideGo(1)">Keyingisi →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading" style="display:none;">Qayta ishlanmoqda...</div>
+
+  <script>
+    // Sarlavha balandligi o'zgarsa (eslatma 2-3 qatorga o'tsa), ishchi oyna sig'ib tursin
+    function fitHeader() { document.documentElement.style.setProperty('--hh', document.querySelector('header').offsetHeight + 'px'); }
+    window.addEventListener('resize', fitHeader);
+    window.addEventListener('load', fitHeader);
+    fitHeader();
+
+    let state = { sid: null, total: 0, excluded: new Set(), mode: 'booklet', nup: 2, sig: 16 };
+
+    document.getElementById('dropZone').addEventListener('click', () => document.getElementById('fileInp').click());
+    document.getElementById('fileInp').addEventListener('change', e => {
+      if (e.target.files.length) uploadFile(e.target.files[0]);
+    });
+
+    const drop = document.getElementById('dropZone');
+    drop.ondragover = e => { e.preventDefault(); drop.style.borderColor = '#2563eb'; };
+    drop.ondragleave = () => { drop.style.borderColor = '#93c5fd'; };
+    drop.ondrop = e => {
+      e.preventDefault();
+      if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+    };
+
+    function showLoad() { document.getElementById('loading').style.display = 'flex'; }
+    function hideLoad() { document.getElementById('loading').style.display = 'none'; }
+    function fail(err) { hideLoad(); alert('Xatolik: ' + (err && err.message ? err.message : err)); }
+
+    // ===================== BRAUZERDA ISHLASH (server yo'q) =====================
+    const { PDFDocument, rgb, degrees, PrintScaling } = window.PDFLib || {};
+    const A4W = 595.28, A4H = 841.89, MM = 2.83465;
+
+    function ensurePdfJs() {
+      if (window.pdfjsLib && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    }
+
+    function buildBookletPlan(n, sig) {
+      if (n <= 0) return [];
+      const blocks = [];
+      if (sig > 0) {
+        let cur = 1;
+        while (cur <= n) {
+          const end = Math.min(cur + sig - 1, n);
+          const b = []; for (let i = cur; i <= end; i++) b.push(i);
+          blocks.push(b); cur = end + 1;
+        }
+      } else {
+        const b = []; for (let i = 1; i <= n; i++) b.push(i);
+        blocks.push(b);
+      }
+      const plan = []; let sc = 1;
+      blocks.forEach((bp, bi) => {
+        const t = Math.ceil(bp.length / 4) * 4;
+        const pad = bp.slice(); while (pad.length < t) pad.push(null);
+        for (let s = 0; s < t / 4; s++) {
+          plan.push({ sheet_num: sc, side: 'front', block_num: bi + 1, left_page: pad[t - 1 - 2 * s], right_page: pad[2 * s] });
+          plan.push({ sheet_num: sc, side: 'back', block_num: bi + 1, left_page: pad[2 * s + 1], right_page: pad[t - 2 - 2 * s] });
+          sc++;
+        }
+      });
+      return plan;
+    }
+
+    function planLocal(p) {
+      const act = p.active_pages || [];
+      if (p.mode === 'booklet') {
+        const plan = buildBookletPlan(act.length, p.signature_size || 0).map(it => ({
+          sheet_num: it.sheet_num, side: it.side, block_num: it.block_num,
+          left_orig_page: it.left_page ? act[it.left_page - 1] : null,
+          right_orig_page: it.right_page ? act[it.right_page - 1] : null
+        }));
+        return { success: true, mode: 'booklet', plan };
+      }
+      const n = p.n_up, sheets = [];
+      for (let s = 0; s * n < act.length; s++) sheets.push({ sheet_num: s + 1, pages: act.slice(s * n, (s + 1) * n) });
+      return { success: true, mode: 'nup', plan: sheets };
+    }
+
+    // updatePlan() shu funksiyani chaqiradi; endi javob serverdan emas, shu yerning o'zidan keladi
+    function postJson(url, payload) {
+      try {
+        if (url === '/api/plan') return Promise.resolve(planLocal(payload));
+        return Promise.reject(new Error("Noma'lum amal"));
+      } catch (e) { return Promise.reject(e); }
+    }
+
+    async function uploadFile(file) {
+      if (!window.PDFLib) { alert("PDF kutubxonasi yuklanmadi. Internetni tekshirib, sahifani yangilang."); return; }
+      showLoad();
+      try {
+        const buf = new Uint8Array(await file.arrayBuffer());
+        const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+        state.bytes = buf; state.srcDoc = doc; state.total = doc.getPageCount();
+        state.filename = file.name || 'hujjat.pdf';
+        state.excluded.clear();
+        state.cache = { key: null, bytes: null };
+        state.pdfjsPromise = null;
+        if (window.pdfjsLib) {
+          try { ensurePdfJs(); state.pdfjsPromise = pdfjsLib.getDocument({ data: buf.slice() }).promise; state.pdfjsPromise.catch(() => {}); } catch (e) { state.pdfjsPromise = null; }
+        }
+        document.getElementById('fileLabel').innerText = state.filename;
+        document.getElementById('uploadView').style.display = 'none';
+        document.getElementById('workspaceView').style.display = 'grid';
+        document.getElementById('resetBtn').style.display = 'inline-block';
+        renderGrid();
+        hideLoad();
+      } catch (e) { fail("PDF o'qib bo'lmadi: " + (e && e.message ? e.message : e)); }
+    }
+
+    // Sahifa ko'rinishlari (thumbnail): ekranga kelganda ketma-ket chiziladi
+    let thumbQueue = [], thumbBusy = false;
+    function queueThumb(p) { thumbQueue.push(p); runThumbs(); }
+    async function runThumbs() {
+      if (thumbBusy) return;
+      thumbBusy = true;
+      while (thumbQueue.length) { await drawThumb(thumbQueue.shift()); }
+      thumbBusy = false;
+    }
+    async function drawThumb(p) {
+      const host = document.getElementById('pv' + p);
+      if (!host || !state.pdfjsPromise) { if (host) host.innerHTML = `<b style="font-size:28px;color:#94a3b8;">${p}</b>`; return; }
+      try {
+        const doc = await state.pdfjsPromise;
+        const page = await doc.getPage(p);
+        const v0 = page.getViewport({ scale: 1 });
+        const vp = page.getViewport({ scale: 220 / v0.width });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        host.innerHTML = ''; host.appendChild(canvas);
+      } catch (e) { host.innerHTML = `<b style="font-size:28px;color:#94a3b8;">${p}</b>`; }
+    }
+
+    let thumbObserver = null;
+    function renderGrid() {
+      const g = document.getElementById('pagesGrid');
+      g.innerHTML = '';
+      thumbQueue = [];
+      if (thumbObserver) thumbObserver.disconnect();
+      thumbObserver = new IntersectionObserver(entries => entries.forEach(en => {
+        if (en.isIntersecting) { thumbObserver.unobserve(en.target); queueThumb(parseInt(en.target.dataset.p)); }
+      }), { root: document.getElementById('tab1'), rootMargin: '300px' });
+      for (let p = 1; p <= state.total; p++) {
+        const card = document.createElement('div');
+        card.id = 'card' + p;
+        card.dataset.p = p;
+        card.className = 'page-card';
+        card.innerHTML = `
+          <div class="page-preview" id="pv${p}"><span style="color:#94a3b8;font-size:12px;">...</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <b>${p}-bet</b>
+            <button class="btn btn-sm btn-secondary" id="tg${p}" onclick="togglePage(${p})">O'chirish</button>
+          </div>
+        `;
+        g.appendChild(card);
+        thumbObserver.observe(card);
+      }
+      updateStats();
+    }
+
+    function togglePage(p) {
+      if (state.excluded.has(p)) state.excluded.delete(p); else state.excluded.add(p);
+      const isEx = state.excluded.has(p);
+      document.getElementById('card' + p).classList.toggle('excluded', isEx);
+      const b = document.getElementById('tg' + p);
+      b.textContent = isEx ? 'Tiklash' : "O'chirish";
+      b.className = 'btn btn-sm ' + (isEx ? 'btn-primary' : 'btn-secondary');
+      updateStats();
+      if (document.getElementById('tab2').style.display !== 'none') updatePlan();
+    }
+
+    function updateStats() {
+      document.getElementById('statLabel').innerText = `Tanlangan: ${state.total - state.excluded.size} / ${state.total}`;
+    }
+
+    function switchMode(m) {
+      state.mode = m;
+      document.getElementById('bookletSettings').style.display = m === 'booklet' ? 'block' : 'none';
+      document.getElementById('nupSettings').style.display = m === 'nup' ? 'block' : 'none';
+      refreshPreview();
+    }
+
+    function setNup(n, btn) {
+      state.nup = n;
+      document.querySelectorAll('.nup-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      refreshPreview();
+    }
+
+    function showTab(t) {
+      document.getElementById('tab1').style.display = t === 1 ? 'block' : 'none';
+      document.getElementById('tab2').style.display = t === 2 ? 'block' : 'none';
+      document.getElementById('tabBtn1').classList.toggle('active', t === 1);
+      document.getElementById('tabBtn2').classList.toggle('active', t === 2);
+      if (t === 2) updatePlan();
+    }
+
+    function getActive() {
+      const a = [];
+      for (let p = 1; p <= state.total; p++) if (!state.excluded.has(p)) a.push(p);
+      return a;
+    }
+
+    let previewTimer = null;
+    // Sozlama o'zgargan zahoti "Varaqlar rejasi" oynasiga o'tib, yangilaydi
+    function refreshPreview() {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(() => showTab(2), 100);
+    }
+
+    function numVal(id, def) {
+      const v = parseFloat(document.getElementById(id).value);
+      return isNaN(v) ? def : Math.max(0, v);
+    }
+
+    // Varaqning vizual ko'rinishi: margin, oraliq va katakchalar real nisbatda
+    function sheetVisual(cells, cols, rows, landscape, marginMm, gapMm, fold) {
+      const sw = landscape ? 297 : 210, sh = landscape ? 210 : 297;
+      const style = `aspect-ratio:${sw}/${sh};max-width:${landscape ? 460 : 280}px;` +
+        `padding:${(marginMm / sw * 100).toFixed(2)}%;` +
+        `column-gap:${(gapMm / sw * 100).toFixed(2)}%;row-gap:${(gapMm / sh * 100).toFixed(2)}%;` +
+        `grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr);`;
+      let html = `<div class="sv" style="${style}">`;
+      cells.forEach(c => {
+        if (c.page) html += `<div class="cell"><b>${c.page}</b>${c.label ? '<small>' + c.label + '</small>' : ''}</div>`;
+        else html += `<div class="cell empty"><small>(bo'sh)</small>${c.tail ? "<small>hujjat oxiriga qo'shilgan</small>" : ''}</div>`;
+      });
+      if (fold) html += '<div class="fold"></div>';
+      return html + '</div>';
+    }
+
+    function updatePlan() {
+      const act = getActive();
+      state.sig = parseInt(document.getElementById('sigSelect').value);
+      const margin = numVal('marginInp', 5);
+      const gutter = numVal('gutterInp', 4);
+      const fold = document.getElementById('foldChk').checked;
+      const nupCfg = { 1: [1, 1, false], 2: [2, 1, true], 4: [2, 2, false], 8: [4, 2, true] };
+
+      postJson('/api/plan', { session_id: state.sid, mode: state.mode, active_pages: act, signature_size: state.sig, n_up: state.nup })
+      .then(data => {
+        const pg = document.getElementById('planGrid');
+        pg.innerHTML = '';
+        if (!data.success) { pg.textContent = data.error || 'Xatolik'; return; }
+
+        const summary = document.createElement('div');
+        summary.className = 'plan-summary';
+        pg.appendChild(summary);
+
+        if (data.mode === 'booklet') {
+          const sheets = data.plan.length / 2;
+          const pad = sheets * 4 - act.length;
+          summary.innerHTML = `📖 <b>Kitobcha</b> · ${act.length} bet · ${sheets} varaq (${data.plan.length} tomon)` +
+            (pad > 0 ? ` · <b>oxiriga ${pad} ta bo'sh bet qo'shildi</b>` : ' · bo\'sh bet kerak emas') +
+            ` · blok: ${state.sig === 0 ? 'bitta' : state.sig + ' betlik'} · margin ${margin} mm · tikish oralig'i ${gutter} mm`;
+          data.plan.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'sheet-card';
+            card.innerHTML = `
+              <div style="display:flex;justify-content:space-between;">
+                <b>Varaq ${item.sheet_num}</b>
+                <span style="font-size:12px;padding:2px 8px;border-radius:4px;background:${item.side==='front'?'#dbeafe':'#fef3c7'}">${item.side==='front'?'Oldi tomon':'Orqa tomon'}</span>
+              </div>` +
+              sheetVisual([
+                { page: item.left_orig_page, label: 'Chap', tail: true },
+                { page: item.right_orig_page, label: "O'ng", tail: true }
+              ], 2, 1, true, margin, gutter, fold);
+            pg.appendChild(card);
+          });
+        } else {
+          const [cols, rows, landscape] = nupCfg[state.nup];
+          summary.innerHTML = `📑 <b>N-Up: ${state.nup} bet/varaq</b> · ${act.length} bet · ${data.plan.length} varaq` +
+            ` · ${landscape ? 'albom' : 'kitob'} yo'nalishi · margin ${margin} mm`;
+          data.plan.forEach(item => {
+            const cells = [];
+            for (let i = 0; i < state.nup; i++) cells.push({ page: item.pages[i] || null });
+            const card = document.createElement('div');
+            card.className = 'sheet-card';
+            card.innerHTML = `<b>Varaq ${item.sheet_num}</b> <span style="font-size:12px;color:#64748b;">(${item.pages.length} ta bet)</span>` +
+              sheetVisual(cells, cols, rows, landscape, margin, 3, false);
+            pg.appendChild(card);
+          });
+        }
+      })
+      .catch(fail);
+    }
+
+    // ===================== QO'LLANMA =====================
+    function printerScene(color, label, capL, capR) {
+      return `<div class="scene"><div class="paper"><div class="mk ${color}">${label}</div></div>
+        <div class="pbody">🖨️</div>
+        <div class="cap l">${capL}</div><div class="cap r">${capR}</div></div>`;
+    }
+
+    const GUIDE_STEPS = [
+      {
+        t: '1. PDF faylni tanlang',
+        s: () => `<div class="scene"><div class="dz">PDF shu yerga tashlanadi</div><div class="fl">📄</div></div>`,
+        x: `PDF faylni oynaning o'rtasiga <b>sudrab tashlang</b> yoki <b>"Fayl tanlash"</b> tugmasini bosing.<br><br>
+            Chap tomonda <b>"📖 Kitobcha"</b> rejimi tanlangan bo'ladi: A4 varaqqa 2 ta sahifa bosiladi, o'rtadan buklasangiz <b>A5 kitobcha</b> hosil bo'ladi.`
+      },
+      {
+        t: '2. Sozlamalarni ko\'ring',
+        s: () => `<div class="scene" style="display:flex;align-items:center;justify-content:center;gap:16px;">
+            <div style="width:62%;">${sheetVisual([{page: 8}, {page: 1}], 2, 1, true, 5, 4, true)}</div></div>
+            <div class="cap c">Varaq: chekkadan 5 mm bo'sh joy, o'rtada buklash chizig'i</div>`,
+        x: `Odatda hech narsani o'zgartirish shart emas:
+            <ul>
+              <li><b>Chekka (margin) 5 mm</b> — printer qog'ozning eng chetiga bosa olmaydi, shuning uchun chekkada joy qoldiriladi.</li>
+              <li><b>Tikish oralig'i 4 mm</b> — o'rtadagi tikiladigan joy.</li>
+              <li>Keraksiz betni <b>"O'chirish"</b> tugmasi bilan olib tashlashingiz mumkin.</li>
+              <li>Sahifalar soni 4 ga bo'linmasa, dastur <b>oxiriga bo'sh bet</b> qo'shadi.</li>
+            </ul>
+            O'ng tomondagi <b>"Varaqlar rejasi"</b> oynasida har bir varaq qanday chiqishini ko'rib turasiz.`
+      },
+      {
+        t: '3. Oldi betlarni chop eting',
+        s: () => printerScene('blue', '1', "Bo'sh qog'oz kiradi", "Oldi tomoni bosilgan chiqadi"),
+        x: `Yashil <b>"1-qadam: Oldi betlar"</b> yonidagi <b>"Yuklab olish"</b> ni bosing. PDF yuklanadi — uni oching va chop eting (<b>Ctrl + P</b>).
+            <h4>Chop etish oynasida:</h4>
+            <ul>
+              <li>✅ Printer: <b>bir tomonlama</b> (Simplex / "Print on one side")</li>
+              <li>✅ Masshtab: <b>100% / "Actual size"</b></li>
+              <li>❌ <b>"Fit to page"</b> (sig'dirish) ni <b>yoqmang</b>!</li>
+              <li>✅ Qog'oz o'lchami: <b>A4</b></li>
+            </ul>`
+      },
+      {
+        t: '4. Chiqqan qog\'ozlarni belgilang',
+        s: () => `<div class="scene"><div class="stackp"><span class="arrowp">↑</span></div><div class="pencil">✏️</div>
+                  <div class="cap c">Dastaning tepasiga qalamda o'q chizing</div></div>`,
+        x: `Qog'ozlar printerdan chiqadi — <b>ularning tartibini buzmang</b>, bitta dasta qilib ushlab turing.<br><br>
+            Eng yaxshi usul: <b>dastaning tepa varag'iga qalam bilan kichik o'q (↑) chizing</b>. Shunda qog'oz printerga qaysi tomoni bilan solinganini eslab qolasiz. Bu keyingi qadamda adashmaslik uchun juda muhim.`
+      },
+      {
+        t: '5. Dastani to\'ntaring',
+        s: () => `<div class="scene"><div class="spin">🔄</div>
+                  <div class="flipbox"><div class="fc">8 | 1</div><div class="fc bc">bo'sh tomon</div></div>
+                  <div class="cap c">Kitob varag'ini aylantirgandek, tartibi o'zgarmaydi</div></div>`,
+        x: `Dastani <b>kitob varag'ini aylantirgandek</b> (chap-o'ng tomonga qarab) to'ntaring. Qog'ozlarning <b>tartibi o'zgarmasin</b> — faqat to'ntariladi.<br><br>
+            Endi <b>bo'sh tomon</b> yuqoriga qaragan. Dastani printerning qog'oz solinadigan joyiga qaytaring.<br><br>
+            ⚠️ Printerlar har xil: birida chop etiladigan tomon qog'oz <b>yuqoriga</b> qaragan holda, boshqasida <b>pastga</b> qaragan holda solinadi. Shuning uchun birinchi marta 8 betlik kichik fayl bilan sinab ko'ring (9-qadamga qarang).`
+      },
+      {
+        t: '6. Orqa betlarni chop eting',
+        s: () => printerScene('orange', '2', "To'ntarilgan qog'oz kiradi", "Orqa tomoni ham bosilgan chiqadi"),
+        x: `Endi <b>"2-qadam: Orqa betlar"</b> ning <b>"Yuklab olish"</b> tugmasini bosing, faylni oching va <b>xuddi shu sozlamalar bilan</b> chop eting (bir tomonlama, 100%).<br><br>
+            <b>"Orqa betlarni teskari tartibda chiqarish"</b> katagi odatda <b>yoqilgan</b> bo'ladi — shunda orqa betlar to'g'ri varaqqa tushadi. Agar tartib teskari chiqsa, katakni o'chirib, orqa betlar faylini qaytadan yuklab oling.`
+      },
+      {
+        t: '7. To\'g\'ri chiqqanini tekshiring',
+        s: () => `<div class="scene" style="display:flex;align-items:center;justify-content:center;gap:14px;padding:0 14px;">
+            <div style="width:44%;text-align:center;"><b style="font-size:12px;">OLDI tomon</b>${sheetVisual([{page: 8}, {page: 1}], 2, 1, true, 5, 4, true)}</div>
+            <div style="font-size:26px;">🔄</div>
+            <div style="width:44%;text-align:center;"><b style="font-size:12px;">ORQA tomon</b>${sheetVisual([{page: 2}, {page: 7}], 2, 1, true, 5, 4, true)}</div></div>
+            <div class="cap c">1-bet orqasida 2-bet turishi kerak</div>`,
+        x: `Birinchi varaqni oling. 8 betlik misolda uning <b>bir tomonida 8 | 1</b>, <b>orqasida 2 | 7</b> bo'lishi kerak.
+            <ul>
+              <li>✅ 1-bet orqasida 2-bet turadi (yorug'likka tutib ko'rsangiz ham bo'ladi).</li>
+              <li>✅ Ikkala tomondagi yozuvlarning tepasi <b>bir tomonga</b> qaragan.</li>
+              <li>❌ Orqa tomon tepa-pastga teskari chiqsa — dastani boshqa qirrasidan aylantirib (tepasini pastga qilib) soling.</li>
+            </ul>`
+      },
+      {
+        t: '8. Buklang va tikib chiqing',
+        s: () => `<div class="scene"><div class="bk">
+              <div class="rh">1</div>
+              <div class="lh"><div class="fc">8</div><div class="fc bc">7</div></div>
+              <div class="stp" style="top:28px;"></div><div class="stp" style="top:76px;"></div>
+            </div><div class="cap c">O'rtasidan buklab, 2 ta skoba bilan tikiladi</div></div>`,
+        x: `Har bir varaqni <b>o'rtasidan buklang</b>. Eng birinchi varaq (<b>1-varaq</b>) <b>eng tashqarida</b> bo'ladi, keyingilari uning <b>ichiga</b> joylashadi.<br><br>
+            Buklangan joydan <b>2 ta skoba (steypler)</b> bilan tiking yoki ip bilan tikib chiqing. Kitobcha tayyor! 🎉<br><br>
+            Agar bir nechta blok bo'lsa (masalan, 16 betlik bloklar), har bir blokni alohida buklab tiking, so'ng ularni ketma-ket tartibda birlashtiring.`
+      },
+      {
+        t: '9. Birinchi marta — sinab ko\'ring',
+        s: null,
+        x: `Katta hujjatni chop etishdan oldin <b>8 betlik sinov fayli</b> bilan bir marta mashq qiling (2 varaq — 4 tomon). Shunda printeringiz qog'ozni qanday qabul qilishini bilib olasiz.
+            <h4>Muammo bo'lsa:</h4>
+            <ul>
+              <li><b>Orqa tomon tepa-pastga teskari chiqdi</b> → dastani boshqa qirrasidan aylantirib soling.</li>
+              <li><b>Orqa betlar boshqa varaqqa tushdi</b> → "Orqa betlarni teskari tartibda chiqarish" katagini o'zgartiring va orqa betlarni qayta yuklab oling.</li>
+              <li><b>Chekkalari kesilib chiqdi</b> → margin ni 6–8 mm qiling va "Fit to page" o'chiq ekanini tekshiring.</li>
+              <li><b>Yozuv kichik chiqdi</b> → A4 sahifa A5 ga kichrayadi (taxminan 70%), bu normal holat.</li>
+              <li><b>Qog'oz qisilib qoldi</b> → dastani kamroq (10–20 varaq) qilib soling.</li>
+            </ul>`
+      }
+    ];
+
+    let guideIdx = 0;
+    function openGuide(i) {
+      guideIdx = i || 0;
+      document.getElementById('guideModal').classList.add('open');
+      renderGuide();
+    }
+    function closeGuide() { document.getElementById('guideModal').classList.remove('open'); }
+    function guideGo(d) {
+      const n = guideIdx + d;
+      if (n < 0) return;
+      if (n >= GUIDE_STEPS.length) { closeGuide(); return; }
+      guideIdx = n;
+      renderGuide();
+    }
+    function renderGuide() {
+      const st = GUIDE_STEPS[guideIdx];
+      document.getElementById('guideTitle').textContent = st.t;
+      const stage = document.getElementById('guideStage');
+      if (st.s) { stage.style.display = 'block'; stage.innerHTML = st.s(); } else { stage.style.display = 'none'; stage.innerHTML = ''; }
+      document.getElementById('guideText').innerHTML = st.x;
+      document.getElementById('guideDots').innerHTML = GUIDE_STEPS.map((_, i) =>
+        `<span class="gdot ${i === guideIdx ? 'on' : ''}" onclick="guideIdx=${i};renderGuide()"></span>`).join('');
+      document.getElementById('gPrev').style.visibility = guideIdx === 0 ? 'hidden' : 'visible';
+      document.getElementById('gNext').textContent = guideIdx === GUIDE_STEPS.length - 1 ? 'Tushunarli ✓' : 'Keyingisi →';
+    }
+    document.addEventListener('keydown', e => {
+      if (!document.getElementById('guideModal').classList.contains('open')) return;
+      if (e.key === 'Escape') closeGuide();
+      if (e.key === 'ArrowRight') guideGo(1);
+      if (e.key === 'ArrowLeft') guideGo(-1);
+    });
+
+    // ===================== IMPOSITION (brauzerda) =====================
+    async function prepareSource(active) {
+      const out = await PDFDocument.create();
+      const copied = await out.copyPages(state.srcDoc, active.map(p => p - 1));
+      const boxes = copied.map(pg => { const b = pg.getMediaBox(); return { left: b.x, bottom: b.y, right: b.x + b.width, top: b.y + b.height }; });
+      const embedded = await out.embedPages(copied, boxes);
+      return { out, copied, embedded };
+    }
+
+    function placeEmb(sheet, emb, pg, slot) {
+      const [bx, by, bw, bh] = slot;
+      const mb = pg.getMediaBox();
+      const w = mb.width, h = mb.height;
+      const rot = ((pg.getRotation().angle % 360) + 360) % 360;   // /Rotate hisobga olinadi
+      const swap = rot === 90 || rot === 270;
+      const ew = swap ? h : w, eh = swap ? w : h;
+      const pad = 2, aw = Math.max(1, bw - 2 * pad), ah = Math.max(1, bh - 2 * pad);
+      const s = Math.min(aw / ew, ah / eh);
+      const tx = bx + pad + (aw - ew * s) / 2, ty = by + pad + (ah - eh * s) / 2;
+      const dw = w * s, dh = h * s;
+      let x = tx, y = ty, ang = 0;
+      if (rot === 90) { y = ty + dw; ang = -90; }
+      else if (rot === 180) { x = tx + dw; y = ty + dh; ang = -180; }
+      else if (rot === 270) { x = tx + dh; ang = 90; }
+      sheet.drawPage(emb, { x, y, width: dw, height: dh, rotate: degrees(ang) });
+    }
+
+    function drawOverlay(sheet, sw, sh, slots, borders, fold) {
+      if (fold) sheet.drawLine({ start: { x: sw / 2, y: 15 }, end: { x: sw / 2, y: sh - 15 }, thickness: 0.5, color: rgb(0.75, 0.75, 0.75), dashArray: [4, 4] });
+      if (borders) slots.forEach(([x, y, w, h]) => sheet.drawRectangle({ x, y, width: w, height: h, borderColor: rgb(0.7, 0.7, 0.7), borderWidth: 0.5 }));
+    }
+
+    function finalizeDoc(doc) {   // "Fit to page" xavfini kamaytiradi
+      try { doc.catalog.getOrCreateViewerPreferences().setPrintScaling(PrintScaling.None); } catch (e) {}
+    }
+
+    async function imposeBooklet(active, sig, marginMm, gutterMm, borders, fold) {
+      const { out, copied, embedded } = await prepareSource(active);
+      const plan = buildBookletPlan(active.length, sig);
+      const sw = A4H, sh = A4W;
+      const m = marginMm * MM, g = gutterMm * MM;
+      const cw = (sw - 2 * m - g) / 2, ch = sh - 2 * m;
+      if (cw < 50 || ch < 50) throw new Error("Margin yoki tikish oralig'i juda katta.");
+      const L = [m, m, cw, ch], R = [m + cw + g, m, cw, ch];
+      for (const it of plan) {
+        const sheet = out.addPage([sw, sh]);
+        if (it.left_page) placeEmb(sheet, embedded[it.left_page - 1], copied[it.left_page - 1], L);
+        if (it.right_page) placeEmb(sheet, embedded[it.right_page - 1], copied[it.right_page - 1], R);
+        drawOverlay(sheet, sw, sh, [L, R], borders, fold);
+      }
+      finalizeDoc(out);
+      return await out.save();
+    }
+
+    async function imposeNup(active, nUp, marginMm, borders) {
+      const { out, copied, embedded } = await prepareSource(active);
+      const m = marginMm * MM, sp = 3.0 * MM;
+      const cfg = { 1: [A4W, A4H, 1, 1], 2: [A4H, A4W, 2, 1], 4: [A4W, A4H, 2, 2], 8: [A4H, A4W, 4, 2] }[nUp];
+      if (!cfg) throw new Error("Noto'g'ri N-Up: " + nUp);
+      const [sw, sh, cols, rows] = cfg;
+      const slotW = (sw - 2 * m - (cols - 1) * sp) / cols, slotH = (sh - 2 * m - (rows - 1) * sp) / rows;
+      if (slotW < 30 || slotH < 30) throw new Error("Margin yoki oraliq juda katta.");
+      const slots = [];
+      for (let r = 0; r < rows; r++) {
+        const by = sh - m - (r + 1) * slotH - r * sp;
+        for (let c = 0; c < cols; c++) slots.push([m + c * (slotW + sp), by, slotW, slotH]);
+      }
+      const per = cols * rows, sheets = Math.ceil(active.length / per);
+      for (let s = 0; s < sheets; s++) {
+        const sheet = out.addPage([sw, sh]);
+        slots.forEach((slot, i) => {
+          const idx = s * per + i;
+          if (idx < active.length) placeEmb(sheet, embedded[idx], copied[idx], slot);
+        });
+        drawOverlay(sheet, sw, sh, slots, borders, false);
+      }
+      finalizeDoc(out);
+      return await out.save();
+    }
+
+    // Qo'lda duplex: juft indeks = oldi, toq indeks = orqa. Toq varaq bo'lsa oxirgi orqaga bo'sh bet qo'shiladi
+    async function splitDuplex(imposedBytes, reverse, which) {
+      const imp = await PDFDocument.load(imposedBytes);
+      const n = imp.getPageCount();
+      const fi = [], bi = [];
+      for (let i = 0; i < n; i++) (i % 2 === 0 ? fi : bi).push(i);
+      const doc = await PDFDocument.create();
+      if (which === 'fronts') {
+        (await doc.copyPages(imp, fi)).forEach(p => doc.addPage(p));
+      } else {
+        const items = await doc.copyPages(imp, bi);
+        if (bi.length < fi.length && fi.length) items.push('blank');
+        if (reverse) items.reverse();
+        const last = imp.getPage(fi[fi.length - 1]).getSize();
+        items.forEach(it => { if (it === 'blank') doc.addPage([last.width, last.height]); else doc.addPage(it); });
+      }
+      finalizeDoc(doc);
+      return await doc.save();
+    }
+
+    function saveBlob(bytes, name) {
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+
+    async function downloadPdf(type) {
+      if (!window.PDFLib) { alert("PDF kutubxonasi yuklanmadi. Internetni tekshirib, sahifani yangilang."); return; }
+      showLoad();
+      await new Promise(r => setTimeout(r, 30));   // "Qayta ishlanmoqda" yozuvi ko'rinib qolsin
+      try {
+        const active = getActive();
+        if (!active.length) throw new Error("Chop etish uchun sahifa tanlanmagan.");
+        const sig = parseInt(document.getElementById('sigSelect').value);
+        const margin = Math.min(25, numVal('marginInp', 5));
+        const gutter = Math.min(25, numVal('gutterInp', 4));
+        const borders = document.getElementById('borderChk').checked;
+        const fold = document.getElementById('foldChk').checked;
+        const rev = document.getElementById('revBacks').checked;
+
+        const key = JSON.stringify([state.mode, active, sig, state.nup, margin, gutter, borders, fold]);
+        if (state.cache.key !== key) {
+          const bytes = state.mode === 'booklet'
+            ? await imposeBooklet(active, sig, margin, gutter, borders, fold)
+            : await imposeNup(active, state.nup, margin, borders);
+          state.cache = { key, bytes };
+        }
+        const imposed = state.cache.bytes;
+        const base = state.filename.replace(/\.[^.]+$/, '');
+        let outBytes, name;
+        if (type === 'fronts') { outBytes = await splitDuplex(imposed, rev, 'fronts'); name = `${base}_1-QADAM_Oldi_Betlar.pdf`; }
+        else if (type === 'backs') { outBytes = await splitDuplex(imposed, rev, 'backs'); name = `${base}_2-QADAM_Orqa_Betlar.pdf`; }
+        else { outBytes = imposed; name = `${base}_Kitobcha_Chop_Etish.pdf`; }
+        saveBlob(outBytes, name);
+        hideLoad();
+      } catch (e) { fail(e); }
+    }
+  </script>
+</body>
+</html>
